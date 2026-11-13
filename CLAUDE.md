@@ -53,19 +53,34 @@ sim/      Simulator scripts, Makefiles, run outputs (logs/waves gitignored)
 docs/     Notes, register map / spec, verification plan, learning notes
 ```
 
-## Toolchain: TBD
+## Toolchain: EDA Playground + Synopsys VCS
 
-The simulator has **not been chosen yet**. The candidates are:
-- **EDA Playground:** browser-based, with commercial simulators that support full UVM.
-- **Verilator + cocotb:** open source and local. Note: cocotb testbenches are written in **Python**, not SystemVerilog UVM (pyuvm offers a UVM-like structure), and Verilator's SystemVerilog UVM support is limited. Picking this path changes how `tb/` and `tests/` are written.
+Simulation runs in the browser on [EDA Playground](https://www.edaplayground.com) with **Synopsys VCS 2025.06** and **UVM 1.2**. There are no local build or run commands. Do not suggest Makefiles or local simulator invocations unless the toolchain changes.
 
-Until a simulator is chosen:
-- Do not assume specific build or run commands.
-- When the choice affects code (for example, simulator-specific syntax or UVM support), point that out.
-- Once the user decides, update this section with the exact commands to compile, run a single test, choose a seed and view waveforms.
+**Workflow**
+- This git repo is the source of truth. Edit files here, then copy them into EDA Playground to run them.
+- EDA Playground compiles only `design.sv` (the DUT, from `rtl/`) and `testbench.sv` (the top-level module, from `tb/`). Other files are added as extra tabs and must be pulled in with `` `include `` (normally from a package such as `tb/apb_pkg.sv`). Keep this in mind when deciding where files and `` `include ``s go.
+- You must be logged in to an EDA Playground account to use VCS.
+
+**Settings (left panel)**
+
+| What | Setting |
+|---|---|
+| Testbench + Design | SystemVerilog/Verilog |
+| UVM / OVM | UVM 1.2 |
+| Tools & Simulators | Synopsys VCS 2025.06 |
+| Compile options | keep the defaults EDA Playground fills in for VCS |
+| Run a single test | Run options: `+UVM_TESTNAME=<test_class_name>` |
+| Choose a seed | Run options: `+ntb_random_seed=<N>` (note the seed from the log to reproduce a failure) |
+| Verbosity | Run options: `+UVM_VERBOSITY=UVM_LOW` / `UVM_MEDIUM` / `UVM_HIGH` |
+| View waveforms | Tick **"Open EPWave after run"**, and the top module must contain `initial begin $dumpfile("dump.vcd"); $dumpvars; end` |
+
+Example run options: `+UVM_TESTNAME=apb_rw_test +ntb_random_seed=1234 +UVM_VERBOSITY=UVM_MEDIUM`
+
+When code depends on the simulator (VCS-specific options, UVM 1.2 vs. 1.1d API differences), point that out. If EDA Playground's VCS version changes, update the version here.
 
 ## Conventions
 
-- SystemVerilog for RTL. SystemVerilog UVM for the testbench, unless the cocotb path is chosen.
+- SystemVerilog for RTL. SystemVerilog UVM (1.2) for the testbench.
 - Keep the register map in `docs/` as the single source of truth. Both the RTL and the testbench should follow it.
 - Write a verification plan (features → tests/coverage/assertions) in `docs/` before writing many tests, and keep it up to date.
